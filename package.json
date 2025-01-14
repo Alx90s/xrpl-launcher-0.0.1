@@ -1,0 +1,7 @@
+{
+  "name": "xrpl-token-launcher",
+  "version": "1.0.0",
+  "dependencies": {
+    "xrpl": "^2.8.1"
+  }
+}

@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>XRPL AMM Demo (Token + XRP)</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+      crossorigin="anonymous"
+    />
+    <!-- xrpl.js 4.0.0 from CDN -->
+    <script
+      src="https://unpkg.com/xrpl@4.0.0/build/xrpl-latest.js"
+      defer
+    ></script>
+    <style>
+      /* Keep your existing custom styles here */
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+      }
+      h1 {
+        margin-bottom: 0.5rem;
+      }
+      label {
+        margin-top: 0.5rem; /* reduced since .form-label also adds spacing */
+      }
+      #logArea {
+        width: 100%;
+        min-height: 200px;
+      }
+      /* End of your custom styles */
+    </style>
+  </head>
+  <body class="bg-light">
+    <div class="container py-4">
+      <h1 class="mb-4">
+        XRPL Demo: Issuer/Receiver, Token Creation, AMM (Token + XRP)
+      </h1>
+
+      <!-- =========================================
+            1) ISSUER WALLET
+           ========================================= -->
+      <h2>Issuer Wallet</h2>
+      <div class="mb-3">
+        <button id="createIssuerBtn" class="btn btn-primary btn-sm">
+          Create New Issuer Wallet
+        </button>
+        <button id="loadIssuerBtn" class="btn btn-secondary btn-sm">
+          Load Issuer from LocalStorage
+        </button>
+        <button id="resetIssuerBtn" class="btn btn-danger btn-sm">
+          Reset Issuer
+        </button>
+      </div>
+      <p id="issuerInfo" class="form-text"></p>
+      <div class="mb-3">
+        <button
+          id="checkIssuerBalanceBtn"
+          class="btn btn-outline-primary btn-sm"
+        >
+          Check Issuer Balances
+        </button>
+        <button id="setDefaultRippleBtn" class="btn btn-outline-success btn-sm">
+          Enable Default Ripple on Issuer
+        </button>
+        <button id="setDisallowXRPBtn" class="btn btn-outline-success btn-sm">
+          setDisallowXRP on Issuer
+        </button>
+        <!-- Domain Button -->
+        <button
+          id="setIssuerDomainBtn"
+          class="btn btn-outline-warning btn-sm ml-2"
+        >
+          Set Domain on Issuer
+        </button>
+      </div>
+
+      <hr />
+      <h2>AMM: rwAHXMGE68DKmv8n7Bubz4NBeqqma5KsBJ</h2>
+      <hr />
+
+      <!-- =========================================
+            2) RECEIVER WALLET
+           ========================================= -->
+      <h2>Receiver Wallet</h2>
+      <div class="mb-3">
+        <button id="createReceiverBtn" class="btn btn-primary btn-sm">
+          Create New Receiver Wallet
+        </button>
+        <button id="loadReceiverBtn" class="btn btn-secondary btn-sm">
+          Load Receiver from LocalStorage
+        </button>
+        <button id="resetReceiverBtn" class="btn btn-danger btn-sm">
+          Reset Receiver
+        </button>
+      </div>
+      <p id="receiverInfo" class="form-text"></p>
+      <div class="mb-3">
+        <button
+          id="checkReceiverBalanceBtn"
+          class="btn btn-outline-primary btn-sm"
+        >
+          Check Receiver Balances
+        </button>
+      </div>
+
+      <hr />
+
+      <!-- =========================================
+            3) TOKEN CREATION (Issuer -> Receiver)
+           ========================================= -->
+      <h2>Create a New Token</h2>
+      <form id="tokenForm" class="mb-4">
+        <div class="mb-3">
+          <label for="tokenName" class="form-label">Name:</label>
+          <input
+            type="text"
+            id="tokenName"
+            placeholder="My Test Token"
+            required
+            class="form-control"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="tokenSymbol" class="form-label">Symbol:</label>
+          <input
+            type="text"
+            id="tokenSymbol"
+            placeholder="MYTKN"
+            required
+            class="form-control"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="tokenDecimals" class="form-label">Decimals:</label>
+          <input
+            type="number"
+            id="tokenDecimals"
+            value="6"
+            class="form-control"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="tokenSupply" class="form-label"
+            >Supply (whole number):</label
+          >
+          <input
+            type="number"
+            id="tokenSupply"
+            placeholder="1000000"
+            required
+            class="form-control"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="tokenDescription" class="form-label">Description:</label>
+          <input
+            type="text"
+            id="tokenDescription"
+            placeholder="Description here"
+            class="form-control"
+          />
+        </div>
+
+        <fieldset class="mb-3">
+          <legend>Social Fields (optional)</legend>
+          <div class="mb-3">
+            <label for="tokenWebsite" class="form-label">Website:</label>
+            <input
+              type="url"
+              id="tokenWebsite"
+              placeholder="https://example.com"
+              class="form-control"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="tokenTwitter" class="form-label">Twitter:</label>
+            <input
+              type="url"
+              id="tokenTwitter"
+              placeholder="https://twitter.com/..."
+              class="form-control"
+            />
+          </div>
+        </fieldset>
+
+        <!-- Input for the domain/URL where you plan to host xrp-ledger.toml -->
+        <div class="mb-3">
+          <label for="tomlUrl" class="form-label"
+            >Domain/URL for your xrp-ledger.toml:</label
+          >
+          <input
+            type="text"
+            id="tomlUrl"
+            placeholder="mydomain.com or https://mydomain.com"
+            class="form-control"
+          />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-sm">
+          Issue Token
+        </button>
+        <!-- A button to generate & download xrp-ledger.toml after token creation. -->
+        <button
+          type="button"
+          class="btn btn-outline-info btn-sm ml-2"
+          onclick="downloadToml()"
+        >
+          Download xrp-ledger.toml
+        </button>
+      </form>
+
+      <hr />
+
+      <!-- =========================================
+            4) SIMPLE AMM CREATION (Original)
+           ========================================= -->
+      <h2>Create AMM (Simple)</h2>
+      <p>Provide liquidity by pairing your newly issued token with XRP.</p>
+      <form id="ammForm" class="mb-4">
+        <div class="mb-3">
+          <label for="ammTokenSelect" class="form-label">Select Token:</label>
+          <select id="ammTokenSelect" class="form-select" required>
+            <option value="" disabled selected>Select a token</option>
+            <!-- Hard-coded example codes -->
+            <option value="ABC">ABC (3-letter example)</option>
+            <option value="RGX">RGX</option>
+            <option value="EMO">EMO</option>
+            <option value="5445535400000000000000000000000000000000">
+              TEST (hex-encoded)
+            </option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="lpTokenAmount" class="form-label">Token Amount:</label>
+          <input
+            type="number"
+            id="lpTokenAmount"
+            placeholder="500"
+            required
+            class="form-control"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="lpXrpAmount" class="form-label">XRP Amount:</label>
+          <input
+            type="number"
+            id="lpXrpAmount"
+            placeholder="50"
+            required
+            class="form-control"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Create AMM</button>
+      </form>
+
+      <hr />
+
+      <!-- =========================================
+            6.1) WITHDRAW AMM
+           ========================================= -->
+      <h2>Withdraw AMM fully</h2>
+      <button onclick="withdrawFullAMM(event)">Withdraw All from AMM</button>
+
+      <hr />
+
+      <!-- =========================================
+            6) SEND XRP FROM RECEIVER
+           ========================================= -->
+      <h2>Send XRP From Receiver</h2>
+      <form id="sendXrpForm" class="mb-4">
+        <div class="mb-3">
+          <label for="sendDestination" class="form-label"
+            >Destination Address:</label
+          >
+          <input
+            type="text"
+            id="sendDestination"
+            placeholder="rX..."
+            required
+            class="form-control"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="sendAmount" class="form-label">XRP Amount:</label>
+          <input
+            type="number"
+            step="0.000001"
+            id="sendAmount"
+            placeholder="10"
+            required
+            class="form-control"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Send XRP</button>
+      </form>
+
+      <hr />
+
+      <!-- =========================================
+            LOG OUTPUT
+           ========================================= -->
+      <h2>Logs</h2>
+      <pre id="logArea" class="bg-white border p-2"></pre>
+    </div>
+
+    <!-- Your existing <script> code (unchanged) goes below -->
+    <script>
+      // XRPL server (Testnet). Switch to devnet if needed for XLS-30 testing.
+      const TESTNET_SERVER =
+        "wss://methodical-withered-dream.xrp-mainnet.quiknode.pro/6d639c1eacd0bb5ebe9e8e2ca50c583a39a58a18";
+
+      // DOM elements
+      const createIssuerBtn = document.getElementById("createIssuerBtn");
+      const loadIssuerBtn = document.getElementById("loadIssuerBtn");
+      const resetIssuerBtn = document.getElementById("resetIssuerBtn");
+      const issuerInfo = document.getElementById("issuerInfo");
+      const checkIssuerBalanceBtn = document.getElementById(
+        "checkIssuerBalanceBtn"
+      );
+      const setDefaultRippleBtn = document.getElementById(
+        "setDefaultRippleBtn"
+      );
+      const setIssuerDomainBtn = document.getElementById("setIssuerDomainBtn");
+
+      const createReceiverBtn = document.getElementById("createReceiverBtn");
+      const loadReceiverBtn = document.getElementById("loadReceiverBtn");
+      const resetReceiverBtn = document.getElementById("resetReceiverBtn");
+      const receiverInfo = document.getElementById("receiverInfo");
+      const checkReceiverBalanceBtn = document.getElementById(
+        "checkReceiverBalanceBtn"
+      );
+
+      const tokenForm = document.getElementById("tokenForm");
+      const logArea = document.getElementById("logArea");
+
+      const ammForm = document.getElementById("ammForm");
+      const ammTokenSelect = document.getElementById("ammTokenSelect");
+      const lpTokenAmount = document.getElementById("lpTokenAmount");
+      const lpXrpAmount = document.getElementById("lpXrpAmount");
+
+      // Advanced "Create New AMM" fields
+      const newAmmTokenAmount = document.getElementById("newAmmTokenAmount");
+      const newAmmXrpAmount = document.getElementById("newAmmXrpAmount");
+
+      // The toml input field
+      const tomlUrlInput = document.getElementById("tomlUrl");
+
+      // (NEW) Send XRP from Receiver
+      const sendXrpForm = document.getElementById("sendXrpForm");
+      const sendDestinationInput = document.getElementById("sendDestination");
+      const sendAmountInput = document.getElementById("sendAmount");
+
+      // We'll store each wallet in localStorage
+      let issuerWallet = null;
+      let receiverWallet = null;
+
+      // Load wallets from localStorage on page load
+      loadIssuerFromLocalStorage();
+      loadReceiverFromLocalStorage();
+
+      // ~~~~~~~~~~~~~ ISSUER EVENTS ~~~~~~~~~~~~~
+      createIssuerBtn.addEventListener("click", createIssuerWallet);
+      loadIssuerBtn.addEventListener("click", loadIssuerFromLocalStorage);
+      resetIssuerBtn.addEventListener("click", resetIssuer);
+      checkIssuerBalanceBtn.addEventListener("click", () => {
+        if (!issuerWallet) {
+          log("No issuer wallet!");
+          return;
+        }
+        checkBalances(issuerWallet);
+      });
+      setDefaultRippleBtn.addEventListener("click", enableDefaultRipple);
+      setDisallowXRPBtn.addEventListener("click", setDisallowXRP);
+      setIssuerDomainBtn.addEventListener("click", setIssuerDomain);
+
+      // ~~~~~~~~~~~~~ RECEIVER EVENTS ~~~~~~~~~~~~~
+      createReceiverBtn.addEventListener("click", createReceiverWallet);
+      loadReceiverBtn.addEventListener("click", loadReceiverFromLocalStorage);
+      resetReceiverBtn.addEventListener("click", resetReceiver);
+      checkReceiverBalanceBtn.addEventListener("click", () => {
+        if (!receiverWallet) {
+          log("No receiver wallet!");
+          return;
+        }
+        checkBalances(receiverWallet);
+      });
+
+      // Token issuance + simple AMM
+      tokenForm.addEventListener("submit", issueToken);
+      ammForm.addEventListener("submit", createSimpleAMM);
+
+      // NEW: event for sending XRP from receiver
+      sendXrpForm.addEventListener("submit", sendReceiverXRP);
+
+      /*******************************************************
+       * CREATE ISSUER WALLET
+       *******************************************************/
+      async function createIssuerWallet() {
+        logArea.textContent = "Creating issuer wallet... please wait.\n";
+        const client = new xrpl.Client(TESTNET_SERVER);
+        await client.connect();
+        try {
+          const wallet = xrpl.Wallet.generate();
+          storeIssuerWallet(wallet);
+          displayIssuerWallet(wallet);
+          log(
+            "Issuer wallet generated (NOT funded). Please fund with real XRP on Mainnet!"
+          );
+        } catch (err) {
+          log("Error creating issuer wallet: " + err.message);
+        }
+        await client.disconnect();
+      }
+
+      function resetIssuer() {
+        localStorage.removeItem("xrplIssuerWallet");
+        issuerWallet = null;
+        issuerInfo.textContent = "Issuer reset. No issuer wallet stored.";
+        log("Issuer wallet removed from localStorage.");
+      }
+
+      async function enableDefaultRipple() {
+        if (!issuerWallet) {
+          log("Create or load an issuer wallet first.");
+          return;
+        }
+        const client = new xrpl.Client(TESTNET_SERVER);
+        await client.connect();
+        try {
+          const accountSetTx = {
+            TransactionType: "AccountSet",
+            Account: issuerWallet.address,
+            SetFlag: 8, // tfDefaultRipple
+          };
+          const prepared = await client.autofill(accountSetTx, {
+            maxLedgerVersionOffset: 20,
+          });
+          const issuerWalletInstance = xrpl.Wallet.fromSeed(issuerWallet.seed);
+          const signed = issuerWalletInstance.sign(prepared);
+          const result = await client.submitAndWait(signed.tx_blob);
+          log(
+            "DefaultRipple transaction result: " +
+              result.result.meta.TransactionResult
+          );
+          if (result.result.meta.TransactionResult === "tesSUCCESS") {
+            log("Successfully enabled DefaultRipple on Issuer!");
+          } else {
+            log("Error: " + result.result.meta.TransactionResult);
+          }
+        } catch (err) {
+          log("Error enabling DefaultRipple: " + err.message);
+        }
+        await client.disconnect();
+      }
+
+      async function enableDefaultRipple() {
+        if (!issuerWallet) {
+          log("Create or load an issuer wallet first.");
+          return;
+        }
+        const client = new xrpl.Client(TESTNET_SERVER);
+        await client.connect();
+        try {
+          const accountSetTx = {
+            TransactionType: "AccountSet",
+            Account: issuerWallet.address,
+            SetFlag: 8, // tfDefaultRipple
+          };
+          const prepared = await client.autofill(accountSetTx, {
+            maxLedgerVersionOffset: 20,
+          });
+          const issuerWalletInstance = xrpl.Wallet.fromSeed(issuerWallet.seed);
+          const signed = issuerWalletInstance.sign(prepared);
+          const result = await client.submitAndWait(signed.tx_blob);
+          log(
+            "DefaultRipple transaction result: " +
+              result.result.meta.TransactionResult
+          );
+          if (result.result.meta.TransactionResult === "tesSUCCESS") {
+            log("Successfully enabled DefaultRipple on Issuer!");
+          } else {
+            log("Error: " + result.result.meta.TransactionResult);
+          }
+        } catch (err) {
+          log("Error enabling DefaultRipple: " + err.message);
+        }
+        await client.disconnect();
+      }
+
+      async function setDisallowXRP() {
+        if (!issuerWallet) {
+          log("Create or load an issuer wallet first.");
+          return;
+        }
+
+        const client = new xrpl.Client(TESTNET_SERVER);
+        await client.connect();
+
+        try {
+          const accountSetTx = {
+            TransactionType: "AccountSet",
+            Account: issuerWallet.address,
+            SetFlag: 3, // lsfDisallowXRP
+          };
+
+          const prepared = await client.autofill(accountSetTx, {
+            maxLedgerVersionOffset: 20,
+          });
+
+          const issuerWalletInstance = xrpl.Wallet.fromSeed(issuerWallet.seed);
+          const signed = issuerWalletInstance.sign(prepared);
+          const result = await client.submitAndWait(signed.tx_blob);
+
+          log(
+            "DisallowXRP transaction result: " +
+              result.result.meta.TransactionResult
+          );
+
+          if (result.result.meta.TransactionResult === "tesSUCCESS") {
+            log("Successfully set DisallowXRP on Issuer!");
+          } else {
+            log("Error: " + result.result.meta.TransactionResult);
+          }
+        } catch (err) {
+          log("Error setting DisallowXRP: " + err.message);
+        }
+
+        await client.disconnect();
+      }
+
+      /*******************************************************
+       * SET ISSUER DOMAIN
+       *******************************************************/
+      async function setIssuerDomain() {
+        if (!issuerWallet) {
+          log("No issuer wallet set. Please create/load issuer first.");
+          return;
+        }
+
+        const domainAscii = tomlUrlInput.value.trim();
+        if (!domainAscii) {
+          log("Please fill out the 'Domain/URL' field before setting domain!");
+          return;
+        }
+
+        // Convert domain from ASCII to hex
+        function asciiToHex(str) {
+          return Array.from(str)
+            .map((c) => c.charCodeAt(0).toString(16).padStart(2, "0"))
+            .join("");
+        }
+        const domainHex = asciiToHex(domainAscii);
+
+        log(`Setting domain to: ${domainAscii} (hex: ${domainHex})`);
+
+        const client = new xrpl.Client(TESTNET_SERVER);
+        await client.connect();
+
+        try {
+          const issuerWalletInstance = xrpl.Wallet.fromSeed(issuerWallet.seed);
+          const accountSetTx = {
+            TransactionType: "AccountSet",
+            Account: issuerWallet.address,
+            Domain: domainHex,
+          };
+
+          const prepared = await client.autofill(accountSetTx, {
+            maxLedgerVersionOffset: 20,
+          });
+          const signed = issuerWalletInstance.sign(prepared);
+          const result = await client.submitAndWait(signed.tx_blob);
+
+          log(
+            "SetDomain transaction result: " +
+              result.result.meta.TransactionResult
+          );
+          if (result.result.meta.TransactionResult === "tesSUCCESS") {
+            log(
+              `Successfully set Domain to "${domainAscii}" on issuer ${issuerWallet.address}`
+            );
+          } else {
+            log(
+              "Error setting domain: " + result.result.meta.TransactionResult
+            );
+          }
+        } catch (err) {
+          log("Error setting domain: " + err.message);
+        }
+
+        await client.disconnect();
+      }
+
+      function storeIssuerWallet(wallet) {
+        const data = { address: wallet.address, seed: wallet.seed };
+        localStorage.setItem("xrplIssuerWallet", JSON.stringify(data));
+        issuerWallet = data;
+        displayIssuerWallet(data);
+      }
+
+      function loadIssuerFromLocalStorage() {
+        const data = localStorage.getItem("xrplIssuerWallet");
+        if (data) {
+          try {
+            issuerWallet = JSON.parse(data);
+            displayIssuerWallet(issuerWallet);
+            log("Issuer wallet loaded from localStorage.");
+          } catch (err) {
+            log("Error parsing issuer wallet: " + err.message);
+          }
+        } else {
+          issuerInfo.textContent = "No issuer wallet stored.";
+          log("No issuer wallet found in localStorage.");
+        }
+      }
+
+      function displayIssuerWallet(wallet) {
+        if (!wallet) {
+          issuerInfo.textContent = "No issuer wallet stored.";
+          return;
+        }
+        issuerInfo.textContent = `Issuer Address: ${wallet.address}\nSeed: ${wallet.seed}`;
+      }
+
+      /*******************************************************
+       * CREATE RECEIVER WALLET
+       *******************************************************/
+      async function createReceiverWallet() {
+        logArea.textContent = "Creating receiver wallet... please wait.\n";
+        const client = new xrpl.Client(TESTNET_SERVER);
+        await client.connect();
+        try {
+          const wallet = xrpl.Wallet.generate();
+          storeReceiverWallet(wallet);
+          displayReceiverWallet(wallet);
+          log(
+            "Receiver wallet generated (NOT funded). Please fund with real XRP on Mainnet!"
+          );
+        } catch (err) {
+          log("Error creating receiver wallet: " + err.message);
+        }
+        await client.disconnect();
+      }
+
+      function resetReceiver() {
+        localStorage.removeItem("xrplReceiverWallet");
+        receiverWallet = null;
+        receiverInfo.textContent = "Receiver reset. No receiver wallet stored.";
+        log("Receiver wallet removed from localStorage.");
+      }
+
+      function storeReceiverWallet(wallet) {
+        const data = { address: wallet.address, seed: wallet.seed };
+        localStorage.setItem("xrplReceiverWallet", JSON.stringify(data));
+        receiverWallet = data;
+        displayReceiverWallet(data);
+      }
+
+      function loadReceiverFromLocalStorage() {
+        const data = localStorage.getItem("xrplReceiverWallet");
+        if (data) {
+          try {
+            receiverWallet = JSON.parse(data);
+            displayReceiverWallet(receiverWallet);
+            log("Receiver wallet loaded from localStorage.");
+          } catch (err) {
+            log("Error parsing receiver wallet: " + err.message);
+          }
+        } else {
+          receiverInfo.textContent = "No receiver wallet stored.";
+          log("No receiver wallet found in localStorage.");
+        }
+      }
+
+      function displayReceiverWallet(wallet) {
+        if (!wallet) {
+          receiverInfo.textContent = "No receiver wallet stored.";
+          return;
+        }
+        receiverInfo.textContent = `Receiver Address: ${wallet.address}\nSeed: ${wallet.seed}`;
+      }
+
+      /*******************************************************
+       * ISSUE TOKEN (TrustSet + Payment)
+       *******************************************************/
+      async function issueToken(e) {
+        e.preventDefault();
+        if (!issuerWallet) {
+          log("No issuer wallet set. Cannot issue tokens without an issuer.");
+          return;
+        }
+        if (!receiverWallet) {
+          log(
+            "No receiver wallet set. Please create or load a receiver first."
+          );
+          return;
+        }
+
+        // Gather form data
+        const name = document.getElementById("tokenName").value;
+        const rawSymbol = document.getElementById("tokenSymbol").value;
+        const symbol = convertTickerToHexIfNeeded(rawSymbol);
+        const decimals = parseInt(
+          document.getElementById("tokenDecimals").value,
+          10
+        );
+        const supply = document.getElementById("tokenSupply").value;
+        const description = document.getElementById("tokenDescription").value;
+        const website = document.getElementById("tokenWebsite").value;
+        const twitter = document.getElementById("tokenTwitter").value;
+
+        log(`Preparing to create token:
+              Name: ${name}
+              Symbol: ${symbol}
+              Decimals: ${decimals}
+              Supply: ${supply}
+              Description: ${description}
+              Website: ${website}
+              Twitter: ${twitter}`);
+
+        const client = new xrpl.Client(TESTNET_SERVER);
+        await client.connect();
+
+        try {
+          // 1) TrustSet (Receiver -> Issuer)
+          const trustSetTx = {
+            TransactionType: "TrustSet",
+            Account: receiverWallet.address,
+            LimitAmount: {
+              currency: symbol,
+              issuer: issuerWallet.address,
+              value: "10000000000",
+            },
+          };
+          const preparedTrust = await client.autofill(trustSetTx, {
+            maxLedgerVersionOffset: 20,
+          });
+          const receiverWalletInstance = xrpl.Wallet.fromSeed(
+            receiverWallet.seed
+          );
+          const signedTrust = receiverWalletInstance.sign(preparedTrust);
+          const trustResult = await client.submitAndWait(signedTrust.tx_blob);
+          log(
+            "TrustSet transaction result: " +
+              trustResult.result.meta.TransactionResult
+          );
+          if (trustResult.result.meta.TransactionResult !== "tesSUCCESS") {
+            throw new Error(
+              "TrustSet failed, cannot proceed with token issuance."
+            );
+          }
+
+          // 2) Payment (Issuer -> Receiver)
+          const paymentTx = {
+            TransactionType: "Payment",
+            Account: issuerWallet.address,
+            Destination: receiverWallet.address,
+            Amount: {
+              currency: symbol,
+              issuer: issuerWallet.address,
+              value: supply,
+            },
+            Flags: 2147483648, // tfFullyCanonicalSig
+          };
+          const preparedPayment = await client.autofill(paymentTx, {
+            maxLedgerVersionOffset: 20,
+          });
+          const issuerWalletInstance = xrpl.Wallet.fromSeed(issuerWallet.seed);
+          const signedPayment = issuerWalletInstance.sign(preparedPayment);
+          const paymentHash = signedPayment.hash;
+          const txResult = await client.submitAndWait(signedPayment.tx_blob);
+
+          log(
+            "Token issuance transaction result: " +
+              txResult.result.meta.TransactionResult
+          );
+          if (txResult.result.meta.TransactionResult === "tesSUCCESS") {
+            log(`\nSuccess!
+              Issuer: ${issuerWallet.address}
+              -> Receiver: ${receiverWallet.address}
+              Issued: ${supply} ${symbol}`);
+
+            log(`Name: ${name}`);
+            log(`Decimals: ${decimals}`);
+            log(`Description: ${description}`);
+            log(`Website: ${website}`);
+            log(`Twitter: ${twitter}`);
+
+            log(
+              "Transaction link: https://livenet.xrpl.org/transactions/" +
+                paymentHash
+            );
+            log(
+              `Check your new token here:\nhttps://livenet.xrpl.org/accounts/${issuerWallet.address}/issued-currencies`
+            );
+          } else {
+            log("Something went wrong in the token issuance transaction.");
+          }
+        } catch (err) {
+          log("Error during token issuance: " + err.message);
+        }
+
+        await client.disconnect();
+      }
+
+      /*******************************************************
+       * SIMPLE AMM (Your Original)
+       *******************************************************/
+      async function createSimpleAMM(e) {
+        e.preventDefault();
+        if (!receiverWallet) {
+          log(
+            "You must have a receiver wallet that holds tokens to create the AMM pool."
+          );
+          return;
+        }
+
+        const selectedToken = ammTokenSelect.value;
+        if (!selectedToken) {
+          log("No token selected. Please choose a token in the dropdown.");
+          return;
+        }
+
+        const tokenDeposit = lpTokenAmount.value;
+        const xrpDeposit = lpXrpAmount.value;
+        if (!tokenDeposit || !xrpDeposit) {
+          log("Please enter both token and XRP amounts to deposit.");
+          return;
+        }
+
+        log(
+          `\nCreating AMM pool for ( ${tokenDeposit} of ${selectedToken} ) + ( ${xrpDeposit} XRP )`
+        );
+        const client = new xrpl.Client(TESTNET_SERVER);
+        await client.connect();
+
+        try {
+          const tokenValueString = tokenDeposit;
+          const xrpDrops = (Number(xrpDeposit) * 1000000).toString();
+          const receiverWalletInstance = xrpl.Wallet.fromSeed(
+            receiverWallet.seed
+          );
+
+          // Additional reserve
+          const ss = await client.request({ command: "server_state" });
+          const reserveIncDrops =
+            ss.result.state.validated_ledger.reserve_inc.toString();
+
+          const ammCreateTx = {
+            TransactionType: "AMMCreate",
+            Account: receiverWalletInstance.address,
+            Amount: {
+              currency: selectedToken,
+              issuer: issuerWallet.address,
+              value: tokenValueString,
+            },
+            Amount2: xrpDrops,
+            TradingFee: 0,
+            Fee: reserveIncDrops,
+          };
+
+          const preparedAMM = await client.autofill(ammCreateTx, {
+            maxLedgerVersionOffset: 20,
+          });
+          const signedAMM = receiverWalletInstance.sign(preparedAMM);
+          const ammHash = signedAMM.hash;
+          const ammResult = await client.submitAndWait(signedAMM.tx_blob);
+
+          log(
+            "AMMCreate transaction result: " +
+              ammResult.result.meta.TransactionResult
+          );
+          if (ammResult.result.meta.TransactionResult === "tesSUCCESS") {
+            log(`Success! Created AMM for token ${selectedToken} and XRP.`);
+            log(
+              "Transaction link: https://livenet.xrpl.org/transactions/" +
+                ammHash
+            );
+          } else {
+            log(
+              "AMM creation failed: " + ammResult.result.meta.TransactionResult
+            );
+          }
+        } catch (err) {
+          log("Error during AMM creation: " + err.message);
+        }
+
+        await client.disconnect();
+      }
+
+      /*******************************************************
+       * WITHDRAW FULL AMM
+       *******************************************************/
+
+      async function withdrawFullAMM(e) {
+        e.preventDefault();
+
+        const issuerWallet = JSON.parse(
+          localStorage.getItem("xrplIssuerWallet")
+        );
+        const receiverWallet = JSON.parse(
+          localStorage.getItem("xrplReceiverWallet")
+        );
+        const seed = issuerWallet.seed;
+
+        if (!receiverWallet || !receiverWallet.address) {
+          log("You must have a receiver wallet to withdraw from the AMM.");
+          return;
+        }
+
+        const selectedToken = ammTokenSelect.value;
+        if (!selectedToken) {
+          log("No token selected. Please choose a token in the dropdown.");
+          return;
+        }
+
+        const client = new xrpl.Client(TESTNET_SERVER);
+        await client.connect();
+
+        try {
+          const receiverWalletInstance = xrpl.Wallet.fromSeed(seed);
+
+          // Fetch AMM details to get the LP Token balance
+          const ammInfoResponse = await client.request({
+            command: "amm_info",
+            asset: { currency: "XRP" },
+            asset2: { currency: selectedToken, issuer: issuerWallet.address },
+          });
+
+          const lpTokenBalance = ammInfoResponse.result.amm.lp_token.value;
+
+          log(`Withdrawing from AMM with LP Token Balance: ${lpTokenBalance}`);
+
+          const ammWithdrawTx = {
+            TransactionType: "AMMWithdraw",
+            Account: receiverWalletInstance.address,
+            AMMAccount: ammInfoResponse.result.amm.account,
+            Asset: { currency: selectedToken, issuer: issuerWallet.address },
+            Asset2: { currency: "XRP" },
+            /* LPTokenIn: {
+                    currency: ammInfoResponse.result.amm.lp_token.currency,
+                    issuer: ammInfoResponse.result.amm.lp_token.issuer,
+                    value: lpTokenBalance,
+                  }, */
+            Flags: 131072, // tfWithdrawAll for full withdrawal
+          };
+
+          const newAMMDrawTX = {
+            Account: receiverWalletInstance.address,
+            Asset: {
+              currency: "EMO",
+              issuer: issuerWallet.address,
+            },
+            Asset2: {
+              currency: "XRP",
+            },
+            Fee: "10",
+            Flags: 131072,
+            TransactionType: "AMMWithdraw",
+          };
+
+          const ammDelete = {
+            Account: receiverWalletInstance.address,
+            Asset: {
+              currency: "XRP",
+            },
+            Asset2: {
+              currency: "EMO",
+              issuer: issuerWallet.address,
+            },
+            Fee: "10",
+            Flags: 0,
+            TransactionType: "AMMDelete",
+          };
+
+          console.log(newAMMDrawTX);
+
+          const preparedWithdraw = await client.autofill(newAMMDrawTX, {
+            maxLedgerVersionOffset: 50, // Ensures enough time for submission
+          });
+          const signedWithdraw = receiverWalletInstance.sign(preparedWithdraw);
+          const withdrawHash = signedWithdraw.hash;
+
+          console.log("Prepared transaction:", preparedWithdraw);
+          console.log("Signed transaction:", signedWithdraw);
+
+          const withdrawResult = await client.submitAndWait(
+            signedWithdraw.tx_blob
+          );
+
+          log(
+            "AMMWithdraw transaction result: " +
+              withdrawResult.result.meta.TransactionResult
+          );
+          if (withdrawResult.result.meta.TransactionResult === "tesSUCCESS") {
+            log("Success! Withdrawn all funds from the AMM.");
+            log(
+              "Transaction link: https://livenet.xrpl.org/transactions/" +
+                withdrawHash
+            );
+          } else {
+            log(
+              "AMM withdrawal failed: " +
+                withdrawResult.result.meta.TransactionResult
+            );
+          }
+        } catch (err) {
+          log("Error during AMM withdrawal: " + err.message);
+        }
+
+        await client.disconnect();
+      }
+
+      /*******************************************************
+       * SEND XRP FROM RECEIVER
+       *******************************************************/
+      async function sendReceiverXRP(e) {
+        e.preventDefault();
+        if (!receiverWallet) {
+          log("No receiver wallet set. Please create or load it first.");
+          return;
+        }
+
+        const destination = sendDestinationInput.value.trim();
+        const amountXrp = sendAmountInput.value.trim();
+
+        if (!destination || !amountXrp) {
+          log("Please enter both destination and amount.");
+          return;
+        }
+
+        log(`Sending ${amountXrp} XRP from receiver to ${destination}...`);
+
+        const client = new xrpl.Client(TESTNET_SERVER);
+        await client.connect();
+
+        try {
+          const receiverWalletInstance = xrpl.Wallet.fromSeed(
+            receiverWallet.seed
+          );
+          // Convert to drops
+          const drops = xrpl.xrpToDrops(amountXrp);
+
+          const paymentTx = {
+            TransactionType: "Payment",
+            Account: receiverWalletInstance.address,
+            Destination: destination,
+            Amount: drops,
+            Flags: 2147483648, // tfFullyCanonicalSig
+          };
+
+          const prepared = await client.autofill(paymentTx, {
+            maxLedgerVersionOffset: 20,
+          });
+          const signed = receiverWalletInstance.sign(prepared);
+          const hash = signed.hash;
+          const result = await client.submitAndWait(signed.tx_blob);
+
+          log(
+            "Send XRP transaction result: " +
+              result.result.meta.TransactionResult
+          );
+          if (result.result.meta.TransactionResult === "tesSUCCESS") {
+            log(`Success! Sent ${amountXrp} XRP to ${destination}.`);
+            log(
+              "Transaction link: https://livenet.xrpl.org/transactions/" + hash
+            );
+          } else {
+            log(
+              "Something went wrong: " + result.result.meta.TransactionResult
+            );
+          }
+        } catch (err) {
+          log("Error during sendReceiverXRP: " + err.message);
+        }
+
+        await client.disconnect();
+      }
+
+      /*******************************************************
+       * HELPER: checkBalances()
+       *******************************************************/
+      async function checkBalances(wallet) {
+        const client = new xrpl.Client(TESTNET_SERVER);
+        await client.connect();
+        try {
+          const balances = await client.getBalances(wallet.address);
+          log(`Balances for ${wallet.address}:`);
+          if (balances.length === 0) {
+            log("No balances found.");
+          } else {
+            balances.forEach((bal, idx) => {
+              log(`${idx + 1}) ${bal.currency} = ${bal.value}`);
+            });
+          }
+        } catch (err) {
+          log("Error checking balances: " + err.message);
+        }
+        await client.disconnect();
+      }
+
+      /*******************************************************
+       * HELPER: Convert Ticker => Hex if needed
+       *******************************************************/
+      function convertTickerToHexIfNeeded(ticker) {
+        ticker = ticker.toUpperCase();
+        if (ticker.length <= 3) {
+          return ticker; // e.g. "ABC"
+        }
+        const encoder = new TextEncoder();
+        let bytes = Array.from(encoder.encode(ticker));
+        bytes = bytes.slice(0, 20);
+        while (bytes.length < 20) bytes.push(0);
+        return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
+      }
+
+      /*******************************************************
+       * HELPER: Generate & Download xrp-ledger.toml
+       *******************************************************/
+      function downloadToml() {
+        // Gather all relevant info
+        const domain = tomlUrlInput.value.trim(); // e.g. "mydomain.com"
+        const issuerAddr = issuerWallet ? issuerWallet.address : "r???";
+        const tokenName = document.getElementById("tokenName").value.trim();
+        const tokenSymbol = document.getElementById("tokenSymbol").value.trim();
+        const tokenDecimals = document.getElementById("tokenDecimals").value;
+        const tokenDescription = document
+          .getElementById("tokenDescription")
+          .value.trim();
+        const tokenWebsite = document
+          .getElementById("tokenWebsite")
+          .value.trim();
+        const tokenTwitter = document
+          .getElementById("tokenTwitter")
+          .value.trim();
+
+        if (!issuerWallet) {
+          log("No issuer wallet set. Please create/load issuer first.");
+          return;
+        }
+        if (!domain) {
+          log(
+            "No domain/URL provided. Please enter something in the domain field."
+          );
+          return;
+        }
+
+        // Construct a simple .toml
+        let tomlContent = `
+      # Example xrp-ledger.toml
+      REQUIRED = "xrp-ledger.toml v1"
+
+      [[ACCOUNTS]]
+      address = "${issuerAddr}"
+      desc = "${tokenName} issuer"
+
+      [[CURRENCIES]]
+      code = "${tokenSymbol}"
+      issuer = "${issuerAddr}"
+      display_decimals = ${tokenDecimals}
+      network = "main"  # or "test", if you are on testnet
+
+      [METADATA]
+      org_name = "${tokenName} Project"
+      org_description = "${tokenDescription}"
+      org_url = "${tokenWebsite}"
+      org_twitter = "${tokenTwitter}"
+
+      # If you want official Domain to be set in your AccountSet, you'd do that
+      # domain:  ${domain}
+      `;
+
+        // Clean up whitespace
+        tomlContent = tomlContent.trim() + "\n";
+
+        // Create a Blob and trigger download
+        const blob = new Blob([tomlContent], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "xrp-ledger.toml";
+        document.body.appendChild(a);
+        a.click();
+
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        log("Downloaded xrp-ledger.toml with your data!");
+      }
+
+      /*******************************************************
+       * HELPER: Set Domain on Issuer
+       *******************************************************/
+      async function setIssuerDomain() {
+        if (!issuerWallet) {
+          log("No issuer wallet set. Please create/load issuer first.");
+          return;
+        }
+
+        const domainAscii = tomlUrlInput.value.trim();
+        if (!domainAscii) {
+          log("Please fill out the 'Domain/URL' field before setting domain!");
+          return;
+        }
+
+        // Convert domain from ASCII to hex
+        function asciiToHex(str) {
+          return Array.from(str)
+            .map((c) => c.charCodeAt(0).toString(16).padStart(2, "0"))
+            .join("");
+        }
+        const domainHex = asciiToHex(domainAscii);
+
+        log(`Setting domain to: ${domainAscii} (hex: ${domainHex})`);
+
+        const client = new xrpl.Client(TESTNET_SERVER);
+        await client.connect();
+
+        try {
+          const issuerWalletInstance = xrpl.Wallet.fromSeed(issuerWallet.seed);
+          const accountSetTx = {
+            TransactionType: "AccountSet",
+            Account: issuerWallet.address,
+            Domain: domainHex,
+          };
+
+          const prepared = await client.autofill(accountSetTx, {
+            maxLedgerVersionOffset: 20,
+          });
+          const signed = issuerWalletInstance.sign(prepared);
+          const result = await client.submitAndWait(signed.tx_blob);
+
+          log(
+            "SetDomain transaction result: " +
+              result.result.meta.TransactionResult
+          );
+          if (result.result.meta.TransactionResult === "tesSUCCESS") {
+            log(
+              `Successfully set Domain to "${domainAscii}" on issuer ${issuerWallet.address}`
+            );
+          } else {
+            log(
+              "Error setting domain: " + result.result.meta.TransactionResult
+            );
+          }
+        } catch (err) {
+          log("Error setting domain: " + err.message);
+        }
+
+        await client.disconnect();
+      }
+
+      /*******************************************************
+       * LOGGING
+       *******************************************************/
+      function log(message) {
+        logArea.textContent += message + "\n";
+      }
+    </script>
+
+    <!-- Bootstrap JS Bundle (Popper + Bootstrap JS) -->
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+      integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js"
+      integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js"
+      integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
